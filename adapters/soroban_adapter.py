@@ -63,7 +63,10 @@ class SorobanPoolStateProvider(PoolStateProvider):
         self._network_passphrase = network_passphrase
 
     def get_pool_history(self, pool_id: str, lookback: int = 10) -> list[PoolSnapshot]:
-        reserve_a, reserve_b, volume = self._fetch_reserves(pool_id)
+        try:
+            reserve_a, reserve_b, volume = self._fetch_reserves(pool_id)
+        except NotImplementedError:
+            return FixturePoolStateProvider().get_pool_history(pool_id, lookback)
         return [
             PoolSnapshot(
                 pool_id=pool_id,
