@@ -13,6 +13,7 @@ from core.kill_switch import kill_switch
 from core.kill_switch_redis import RedisKillSwitch
 from core.observability import PROMETHEUS_CONTENT_TYPE, metrics, query_audit_log, render_prometheus_metrics
 from db.session import SessionFactory
+from sqlalchemy import text
 
 app = FastAPI(title="StellarHydra Admin API")
 
@@ -28,6 +29,22 @@ def require_api_key(x_api_key: str = Header(default="")) -> None:
 @app.get("/healthz")
 def healthz() -> dict:
     return {"status": "ok"}
+
+
+@app.get("/readyz")
+def readyz() -> dict:
+    try:
+        with SessionFactory() as session:
+            session.execute(text("SELECT 1"))
+        db_ok = True
+    except Exception:
+        db_ok = False
+    settings = get_settings()
+    return {
+        "ready": db_ok and bool(settings.admin_api_key),
+        "database": db_ok,
+        "admin_key_configured": bool(settings.admin_api_key),
+    }
 
 
 @app.get("/metrics")
