@@ -10,7 +10,9 @@ from adapters.soroban_adapter import PoolStateProvider
 from agents.decision_agent import decide
 from agents.prediction_agent import predict_risk
 from config.settings import Settings
+from core.risk_limits import RiskLimitEnforcer
 from core.state import ExecutionResult, GraphState
+from db.session import SessionFactory
 
 
 def build_graph(
@@ -38,6 +40,14 @@ def build_graph(
     def decide_node(state: GraphState) -> GraphState:
         return decide(state, settings)
 
+    def enforce_limits_node(state: GraphState) -> GraphState:
+        decision = state.get("decision")
+        if decision is None:
+            return state
+        with SessionFactory() as session:
+            state["decision"] = RiskLimitEnforcer(settings).authorize(decision, session)
+        return state
+
     def execute_node(state: GraphState) -> GraphState:
         decision = state["decision"]
         state["execution_result"] = drips_client.adjust_stream(
@@ -61,6 +71,7 @@ def build_graph(
     graph.add_node("ingest_signal", ingest_signal_node)
     graph.add_node("predict", predict_node)
     graph.add_node("decide", decide_node)
+    graph.add_node("enforce_limits", enforce_limits_node)
     graph.add_node("execute", execute_node)
     graph.add_node("skip", skip_node)
 
@@ -68,8 +79,9 @@ def build_graph(
     graph.add_edge("ingest_pool", "ingest_signal")
     graph.add_edge("ingest_signal", "predict")
     graph.add_edge("predict", "decide")
+    graph.add_edge("decide", "enforce_limits")
     graph.add_conditional_edges(
-        "decide", route_after_decision, {"execute": "execute", "skip": "skip"}
+        "enforce_limits", route_after_decision, {"execute": "execute", "skip": "skip"}
     )
     graph.set_finish_point("execute")
     graph.set_finish_point("skip")
