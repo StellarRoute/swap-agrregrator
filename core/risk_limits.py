@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from config.settings import Settings
 from core.kill_switch import kill_switch
+from core.kill_switch_redis import RedisKillSwitch
 from core.state import RebalanceDecision
 from db.models import AgentRunLog
 
@@ -18,7 +19,13 @@ class RiskLimitEnforcer:
         self._settings = settings
 
     def authorize(self, decision: RebalanceDecision, session: Session) -> RebalanceDecision:
-        if self._settings.kill_switch_engaged or kill_switch.engaged:
+        redis_engaged = False
+        try:
+            redis_engaged = RedisKillSwitch().engaged
+        except Exception:
+            redis_engaged = False
+
+        if self._settings.kill_switch_engaged or kill_switch.engaged or redis_engaged:
             return decision.model_copy(
                 update={
                     "action": "no_act",
