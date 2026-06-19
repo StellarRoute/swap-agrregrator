@@ -1,0 +1,35 @@
+# Runs the continuous multi-path orchestration loop (scripts/run_orchestrator.py). Single
+# replica: the loop is not yet designed for multiple concurrent instances of itself.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stellarhydra-orchestrator
+  namespace: stellarhydra
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: stellarhydra-orchestrator
+  template:
+    metadata:
+      labels:
+        app: stellarhydra-orchestrator
+    spec:
+      containers:
+        - name: orchestrator
+          image: ghcr.io/stellarroute/swap-agrregrator:latest
+          command: ["python", "scripts/run_orchestrator.py"]
+          envFrom:
+            - configMapRef:
+                name: stellarhydra-config
+            - secretRef:
+                name: stellarhydra-secrets
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

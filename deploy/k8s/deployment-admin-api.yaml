@@ -1,0 +1,55 @@
+# Serves the operator admin API (audit log, kill switch) and the Prometheus /metrics
+# endpoint; safe to run multiple replicas since it's stateless aside from the DB/registry.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stellarhydra-admin-api
+  namespace: stellarhydra
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stellarhydra-admin-api
+  template:
+    metadata:
+      labels:
+        app: stellarhydra-admin-api
+    spec:
+      containers:
+        - name: admin-api
+          image: ghcr.io/stellarroute/swap-agrregrator:latest
+          command: ["uvicorn", "api.admin:app", "--host", "0.0.0.0", "--port", "8000"]
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: stellarhydra-config
+            - secretRef:
+                name: stellarhydra-secrets
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 5
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+---
+# Internal-only by default (ClusterIP); put behind your ingress/VPN, not the public internet,
+# since the admin endpoints control the kill switch and expose the audit log.
+apiVersion: v1
+kind: Service
+metadata:
+  name: stellarhydra-admin-api
+  namespace: stellarhydra
+spec:
+  selector:
+    app: stellarhydra-admin-api
+  ports:
+    - port: 8000
+      targetPort: 8000
+  type: ClusterIP
