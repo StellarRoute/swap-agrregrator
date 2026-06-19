@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     rebalance_cooldown_seconds: int = 300
     kill_switch_engaged: bool = False
 
+    tracked_paths: str = "xlm-usdc,yxlm-xlm"
+
     pool_poll_interval_seconds: int = 30
     signal_poll_interval_seconds: int = 30
 
@@ -47,3 +49,8 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def tracked_path_ids(settings: Settings | None = None) -> list[str]:
+    cfg = settings or get_settings()
+    return [item.strip() for item in cfg.tracked_paths.split(",") if item.strip()]

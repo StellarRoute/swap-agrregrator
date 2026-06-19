@@ -1,27 +1,17 @@
 # CLI entrypoint: starts the Phase 2 continuous multi-path orchestration loop.
 from __future__ import annotations
 
+from config.paths import load_tracked_paths
 from config.settings import get_settings
 from core.orchestrator import Orchestrator
-from core.state import PathConfig
 
-TRACKED_PATHS = [
-    PathConfig(
-        path_id="XLM-USDC-yXLM",
-        hops=["XLM", "USDC", "yXLM"],
-        pool_ids=["pool-xlm-usdc", "pool-usdc-yxlm"],
-    ),
-    PathConfig(
-        path_id="XLM-AQUA",
-        hops=["XLM", "AQUA"],
-        pool_ids=["pool-xlm-aqua"],
-    ),
-]
+DEFAULT_TRACKED_PATHS = load_tracked_paths()
 
 
 def main() -> None:
     settings = get_settings()
-    orchestrator = Orchestrator(TRACKED_PATHS, settings)
+    paths = load_tracked_paths(settings) or DEFAULT_TRACKED_PATHS
+    orchestrator = Orchestrator(paths, settings)
     orchestrator.run_forever()
 
 
