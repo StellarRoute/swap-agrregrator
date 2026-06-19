@@ -30,6 +30,8 @@ def _build_signal_provider() -> SignalProvider:
     settings = get_settings()
     if settings.use_mock_signal_provider:
         return MockSignalProvider()
+    if not settings.market_data_api_base_url:
+        raise RuntimeError("MARKET_DATA_API_BASE_URL required when USE_MOCK_SIGNAL_PROVIDER=false")
     return HttpSignalProvider(
         market_data_base_url=settings.market_data_api_base_url,
         market_data_api_key=settings.market_data_api_key,
@@ -42,6 +44,8 @@ def _build_drips_client() -> DripsClient:
     settings = get_settings()
     if settings.use_mock_drips_client:
         return MockDripsClient()
+    if not settings.drips_api_base_url or not settings.drips_account_id:
+        raise RuntimeError("DRIPS_API_BASE_URL and DRIPS_ACCOUNT_ID required when USE_MOCK_DRIPS_CLIENT=false")
     return HttpDripsClient(
         base_url=settings.drips_api_base_url,
         api_key=settings.drips_api_key,
