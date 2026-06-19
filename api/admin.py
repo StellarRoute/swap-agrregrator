@@ -10,6 +10,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query, Response
 
 from config.settings import get_settings
 from core.kill_switch import kill_switch
+from core.kill_switch_redis import RedisKillSwitch
 from core.observability import PROMETHEUS_CONTENT_TYPE, metrics, query_audit_log, render_prometheus_metrics
 from db.session import SessionFactory
 
@@ -76,10 +77,18 @@ def get_audit_log(
 @app.post("/kill-switch/engage", dependencies=[Depends(require_api_key)])
 def engage_kill_switch() -> dict:
     kill_switch.engage()
+    try:
+        RedisKillSwitch().engage()
+    except Exception:
+        pass
     return {"engaged": True}
 
 
 @app.post("/kill-switch/disengage", dependencies=[Depends(require_api_key)])
 def disengage_kill_switch() -> dict:
     kill_switch.disengage()
+    try:
+        RedisKillSwitch().disengage()
+    except Exception:
+        pass
     return {"engaged": False}
