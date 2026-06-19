@@ -12,6 +12,8 @@ from adapters.soroban_adapter import (
     SorobanPoolStateProvider,
 )
 from config.settings import get_settings
+from db.persist import persist_pool_snapshot, persist_signal_snapshot
+from db.session import session_scope
 from workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
@@ -52,6 +54,9 @@ def ingest_pool_task(self, pool_id: str, lookback: int = 10) -> list[dict]:
     try:
         provider = _build_pool_provider()
         snapshots = provider.get_pool_history(pool_id, lookback)
+        with session_scope() as session:
+            for snapshot in snapshots:
+                persist_pool_snapshot(session, snapshot)
         return [s.model_dump() for s in snapshots]
     except Exception as exc:
         logger.warning("ingest_pool_task failed for pool_id=%s: %s", pool_id, exc)
@@ -63,6 +68,8 @@ def ingest_signal_task(self, asset: str) -> dict:
     try:
         provider = _build_signal_provider()
         signal = provider.get_signal(asset)
+        with session_scope() as session:
+            persist_signal_snapshot(session, signal)
         return signal.model_dump()
     except Exception as exc:
         logger.warning("ingest_signal_task failed for asset=%s: %s", asset, exc)
