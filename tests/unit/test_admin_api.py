@@ -57,3 +57,17 @@ def test_kill_switch_endpoints_toggle_shared_kill_switch(client):
     response = client.post("/kill-switch/disengage", headers={"x-api-key": "test-key"})
     assert response.status_code == 200
     assert kill_switch.engaged is False
+
+
+def test_readyz_reports_database_and_admin_key(client):
+    response = client.get("/readyz")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["ready"] is True
+    assert body["database"] is True
+
+
+def test_debug_metrics_requires_api_key(client):
+    assert client.get("/debug/metrics").status_code == 401
+    response = client.get("/debug/metrics", headers={"x-api-key": "test-key"})
+    assert response.status_code == 200
