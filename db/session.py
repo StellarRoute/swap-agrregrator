@@ -9,3 +9,7 @@ from config.settings import get_settings
 _settings = get_settings()
 engine = create_engine(_settings.database_url, pool_pre_ping=True)
 SessionFactory: sessionmaker[Session] = sessionmaker(bind=engine, expire_on_commit=False)
+
+
+def session_scope() -> Session:
+    return SessionFactory()
