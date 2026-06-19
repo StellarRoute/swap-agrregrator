@@ -1,0 +1,37 @@
+# Celery workers consuming the ingestion/execution queues; scale replicas/concurrency
+# independently of the orchestrator since this is the part most likely to need headroom.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stellarhydra-worker
+  namespace: stellarhydra
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stellarhydra-worker
+  template:
+    metadata:
+      labels:
+        app: stellarhydra-worker
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/stellarroute/swap-agrregrator:latest
+          command:
+            [
+              "celery", "-A", "workers.celery_app", "worker",
+              "--loglevel=INFO", "--concurrency=4", "-Q", "ingestion,execution",
+            ]
+          envFrom:
+            - configMapRef:
+                name: stellarhydra-config
+            - secretRef:
+                name: stellarhydra-secrets
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"

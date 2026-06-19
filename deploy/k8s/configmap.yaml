@@ -1,0 +1,21 @@
+# Non-secret runtime configuration; secrets (API keys, DB credentials) live in secret.yaml instead.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stellarhydra-config
+  namespace: stellarhydra
+data:
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  SOROBAN_RPC_URL: "https://soroban-testnet.stellar.org"
+  STELLAR_NETWORK_PASSPHRASE: "Test SDF Network ; September 2015"
+  USE_MOCK_DRIPS_CLIENT: "false"
+  USE_MOCK_SIGNAL_PROVIDER: "false"
+  RISK_SCORE_THRESHOLD: "0.65"
+  MAX_STREAM_DELTA_PER_CYCLE: "1000"
+  MAX_PATH_CAPITAL_PCT: "0.25"
+  REBALANCE_COOLDOWN_SECONDS: "300"
+  KILL_SWITCH_ENGAGED: "false"
+  POOL_POLL_INTERVAL_SECONDS: "30"
+  SIGNAL_POLL_INTERVAL_SECONDS: "30"
+  EXECUTOR_FAILURE_ALERT_THRESHOLD: "3"
