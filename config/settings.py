@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     signal_poll_interval_seconds: int = 30
 
     admin_api_key: str | None = None
+    alert_webhook_url: str | None = None
     executor_failure_alert_threshold: int = 3
 
 
