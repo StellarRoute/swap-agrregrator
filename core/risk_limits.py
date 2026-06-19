@@ -35,6 +35,8 @@ class RiskLimitEnforcer:
             return cooldown_block
 
         clamped_delta = min(decision.proposed_delta, self._settings.max_stream_delta_per_cycle)
+        max_by_capital = self._settings.max_path_capital_pct * self._settings.max_stream_delta_per_cycle
+        clamped_delta = min(clamped_delta, max_by_capital)
         if clamped_delta != decision.proposed_delta:
             return decision.model_copy(update={"proposed_delta": clamped_delta})
 

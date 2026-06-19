@@ -37,6 +37,19 @@ def test_delta_clamped_to_configured_max():
     with factory() as session:
         result = enforcer.authorize(_decision(delta=500.0), session)
     assert result.action == "act"
+    assert result.proposed_delta == 25.0
+
+
+def test_delta_respects_max_stream_before_capital_pct():
+    settings = Settings(
+        _env_file=None,
+        max_stream_delta_per_cycle=1000.0,
+        max_path_capital_pct=0.1,
+    )
+    enforcer = RiskLimitEnforcer(settings)
+    factory = _session_factory()
+    with factory() as session:
+        result = enforcer.authorize(_decision(delta=500.0), session)
     assert result.proposed_delta == 100.0
 
 
